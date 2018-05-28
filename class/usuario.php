@@ -47,24 +47,21 @@ class Usuario {
 		$resultados = $sql->select("SELECT * FROM tb_usuarios WHERE id_usuario = :ID", array(":ID"=>$id));
 
 		if(count($resultados) > 0) {
-			$linha = $resultados[0];
-			$this->setId_Usuario($linha['id_usuario']);
-			$this->setDes_login($linha['des_login']);
-			$this->setDes_senha($linha['des_senha']);
-			#$this->setDt_cadastro($linha['dt_cadastro']);
-			$this->setDt_cadastro(new DateTime($linha['dt_cadastro'])); # o 'new DateTime' é pra ele colocar naquele padrão de data e hora. colocando aqui o new DateTime ele já vai instanciar a classe.
+			$this->setDados($resultados[0]);
 		}
 	}
 
 	###############################################
 
 	public function __toString() {
+
 		return json_encode(array(
 			"id_usuario" => $this->getId_Usuario(),
 			"des_login" => $this->getDes_login(),
 			"des_senha" => $this->getDes_senha(),
-			"dt_cadastro" => $this->getDt_cadastro()->format("d/m/Y H:i:s") # os objetos do tipo DateTime possuem o metodo ->format(). Por isso já usa logo para configurar a saída formatada.
+			"dt_cadastro" => $this->getDt_cadastro()->format("d/m/Y H:i:s")
 		));
+		
 	}	
 
 	public static function getList() {
@@ -88,15 +85,51 @@ class Usuario {
 		));
 
 		if(count($resultados) > 0) {
-			$linha = $resultados[0];
-			$this->setId_Usuario($linha['id_usuario']);
-			$this->setDes_login($linha['des_login']);
-			$this->setDes_senha($linha['des_senha']);
-			$this->setDt_cadastro(new DateTime($linha['dt_cadastro'])); 
+			$this->setDados($resultados[0]);
+
 		} else {
 			throw new Exception("Login e/ou senha inválidos");
 			
 		}		
+	}
+
+	public function setDados($d) {
+		$this->setId_Usuario($d['id_usuario']);
+		$this->setDes_login($d['des_login']);
+		$this->setDes_senha($d['des_senha']);
+		$this->setDt_cadastro(new DateTime($d['dt_cadastro'])); 
+		# o 'new DateTime' é pra ele colocar naquele padrão de data e hora. colocando aqui o new DateTime ele já vai instanciar a classe.		
+	}
+
+	public function insere() {
+		$sql = new Sql();
+		#echo 'inserindo';
+		$resultados = $sql->select("CALL sp_usuarios_insert(:LOGIN, :SENHA)",array(
+			':LOGIN'=>$this->getDes_login(),
+			':SENHA'=>$this->getDes_senha()
+		));
+
+		if(count($resultados) > 0) {
+			$this->setDados($resultados[0]);
+		}
+	}
+
+
+	public function update($l, $s) {
+
+		$this->setDes_login($l);
+		$this->setDes_senha($s);
+		$sql = new Sql();
+		$sql->query("UPDATE tb_usuarios SET des_login = :LOGIN, des_senha = :PASS WHERE id_usuario = :ID", array(
+			':LOGIN'=>$this->getDes_login(),
+			':PASS'=>$this->getDes_senha(),
+			':ID'=>$this->getId_Usuario()
+		));
+	}
+
+	public function __construct($l = "", $s = "") {
+		$this->setDes_login($l);
+		$this->setDes_senha($s);
 	}
 
 
